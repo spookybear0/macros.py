@@ -5,10 +5,23 @@ import tokenize
 import encodings
 import types
 import re
+import black
+import sys
 
-__all__ = ("import_with_macros", "get_macro", "get_all_macros")
+__all__ = ("import_with_macros", "get_macro", "get_all_macros", "get_translated_code")
 
 macro_re = re.compile("(.*)\(([^)]+?)\)")
+
+class testsavevar:
+    def __init__(self, var):
+        self.var = var
+        
+    def set(self, var):
+        self.var = var
+        
+    @property
+    def _translated_code(self):
+        return self.var
 
 class Macro:
     def __init__(self, name, code, func_sig=""):
@@ -21,6 +34,36 @@ class Macro:
             self.args = macro_re.findall(func_sig)[0][1].split(",")
         else:
             self.args = []
+        
+    
+    def execute(self, *args):
+        """
+        Executes a macro to the best ability
+        
+        More limited than compile time
+        """
+        final_tokens = []
+        
+        # args
+        arg_loop = False
+        args_replaced = 0
+        type_p, name_p = None, None
+        for type, name in self.tokens:
+            if arg_loop:
+                if type == tokenize.OP and name == ")":
+                    arg_loop = False
+                elif type == tokenize.NAME:
+                    name = args[args_replaced]
+                    args_replaced += 1
+                final_tokens.append((type, name))
+            elif type == tokenize.OP and type_p == tokenize.NAME: # func call
+                arg_loop = True
+                final_tokens.append((type, name))
+            else:
+                final_tokens.append((type, name))
+            type_p, name_p = type, name_p
+
+        exec(tokenize.untokenize(final_tokens))
         
     def __repr__(self):
         return f'Macro(name="{self.name}", func_sig="{self.func_sig}")'
@@ -45,6 +88,7 @@ class MacroList(list):
         return final
             
 _macros = MacroList()
+_translated_code = ["",] # make it mutuable
 
 def translate(readline):
     # iteration variables
@@ -180,7 +224,12 @@ class MacroStreamReader(utf_8.StreamReader):
 def macro_decode(source, errors="strict"):
     code, length = utf_8.decode(source, errors)
     
-    return str(tokenize.untokenize(translate(StringIO(code).readline))), length
+    final = str(tokenize.untokenize(translate(StringIO(code).readline)))
+    
+    if final != "":
+        _translated_code[0] = black.format_str(final, mode=black.FileMode(line_length=99999))
+    
+    return final, length
 
 class MacroIncrementalDecoder(codecs.BufferedIncrementalDecoder):
     def _buffer_decode(self, input, errors, final=False):
@@ -222,6 +271,9 @@ def get_macro(name):
 
 def get_all_macros():
     return _macros
+
+def get_translated_code():
+    return _translated_code[0]
 
 if __name__ == "__main__":
     import_with_macros("D:/code/python/projects/macros.py/examples/max.py")

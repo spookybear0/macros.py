@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import site
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 for site_packages_path in reversed(site.getsitepackages()):
     site_packages = Path(site_packages_path)
