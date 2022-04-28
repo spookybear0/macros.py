@@ -34,7 +34,17 @@ class MacroList(list):
                 return mcr
             
     def __repr__(self):
-        return "MacroList" + super().__repr__()
+        final = "["
+        i = 0
+        for mcr in self:
+            final += mcr.name + mcr.func_sig.replace(",", ", ") # add spacing
+            
+            if i == len(self):
+                final += ", "
+            i += 1
+        final += "]"
+        
+        return final
             
 _macros = MacroList()
 
@@ -55,14 +65,12 @@ def translate(readline):
     func_args_types = []
     func_arg_name = ""
     
-    
-    # required to use "macros" module
-    yield tokenize.NAME, "import"
-    yield tokenize.NAME, "sys"
-    yield tokenize.NL, "\n"
-    
     # preprocess macros
     for type, name,_,_,_ in tokenize.generate_tokens(readline):
+        # end marker
+        if type == tokenize.ENDMARKER:
+            break
+
         # ignore !, !!, and the name of the macro so we don't get a syntax error
         if type == tokenize.ERRORTOKEN or (type_p == tokenize.ERRORTOKEN and type == tokenize.NAME):
             pass
@@ -70,8 +78,11 @@ def translate(readline):
         elif _macros.by_name(name):
             pass
         elif type == tokenize.NAME and name == "macros":
-            #sys.modules["macros"]
-            yield tokenize.NAME, "sys"
+            #__import__("sys").modules["macros"]
+            yield tokenize.NAME, "__import__"
+            yield tokenize.OP, "("
+            yield tokenize.STRING, '"sys"'
+            yield tokenize.OP, ")"
             yield tokenize.OP, "."
             yield tokenize.NAME, "modules"
             yield tokenize.OP, "["
@@ -110,7 +121,7 @@ def translate(readline):
         elif create_loop:
             # make sure we are still checking for macro chars and if it uses one
             # of our ending sequences (\n, ;), stop the loop and define the macro
-            if name == mode:
+            if name in mode or mode in name:
                 create_loop = False
                 _macros.append(Macro(mcr_name, code, func_sig))
             else:
@@ -170,7 +181,7 @@ class MacroStreamReader(utf_8.StreamReader):
 # it just works okay
 def macro_decode(source, errors="strict"):
     code, length = utf_8.decode(source, errors)
-
+    
     return str(tokenize.untokenize(translate(StringIO(code).readline))), length
 
 class MacroIncrementalDecoder(codecs.BufferedIncrementalDecoder):
