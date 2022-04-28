@@ -5,9 +5,7 @@ import tokenize
 import encodings
 import types
 import re
-import sys
 
-from black import token
 __all__ = ("import_with_macros", "get_macro", "get_all_macros")
 
 macro_re = re.compile("(.*)\(([^)]+?)\)")
