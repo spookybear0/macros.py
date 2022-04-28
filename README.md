@@ -38,6 +38,14 @@ To install you must run the following command:
 py -3 -m pip install -U macros.py
 ```
 -->
+## Installing
+
+### From source
+```
+git clone https://github.com/spookybear0/macros.py
+cd macros.py
+python3 -m pip install --upgrade .
+```
 
 
 ## A side note
