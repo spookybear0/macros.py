@@ -9,7 +9,7 @@ Guido van Rossum would hate me
 ## Examples
 
 ### Max function-macro
-```
+```py
 # coding: macros
 
 !MAX(a, b) (a if a > b else b)
@@ -41,7 +41,7 @@ py -3 -m pip install -U macros.py
 ## Installing
 
 ### From source
-```
+```sh
 git clone https://github.com/spookybear0/macros.py
 cd macros.py
 python3 -m pip install --upgrade .
