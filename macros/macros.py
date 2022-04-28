@@ -25,7 +25,7 @@ class Macro:
             self.args = []
         
     def __repr__(self):
-        return f"Macro({self.name})"
+        return f'Macro(name="{self.name}", func_sig="{self.func_sig}")'
         
 class MacroList(list):
     def by_name(self, name):
