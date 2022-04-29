@@ -12,17 +12,6 @@ __all__ = ("import_with_macros", "get_macro", "get_all_macros", "get_translated_
 
 macro_re = re.compile("(.*)\(([^)]+?)\)")
 
-class testsavevar:
-    def __init__(self, var):
-        self.var = var
-        
-    def set(self, var):
-        self.var = var
-        
-    @property
-    def _translated_code(self):
-        return self.var
-
 class Macro:
     def __init__(self, name, code, func_sig=""):
         self.name = name
