@@ -1,5 +1,11 @@
 # macros.py
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://badge.fury.io/py/macros.py.svg)](https://badge.fury.io/py/macros.py)
+[![PyPI downloads](https://img.shields.io/pypi/dm/macros.py)](https://badge.fury.io/py/macros.py)
+[![Repo Size](https://img.shields.io/github/repo-size/spookybear0/macros.py)](https://github.com/spookybear0/macros.py)
+
+
 ## Macros in python
 
 macros.py is an implemention of macros similar to ones found in C using `!` to define macros
