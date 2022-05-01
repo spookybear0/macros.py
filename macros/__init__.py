@@ -1,1 +1,1 @@
-from .macros import import_with_macros, get_macro, get_all_macros, get_translated_code
+from .macros import import_with_macros, get_macro, get_all_macros, get_translated_code, create_macro

@@ -7,9 +7,9 @@ import types
 import re
 import black
 import traceback
-from tokenize import NAME, OP, STRING, ENDMARKER, DEDENT, INDENT
+from tokenize import NAME, OP, STRING, ENDMARKER, DEDENT, INDENT, NL, NEWLINE
 
-__all__ = ("import_with_macros", "get_macro", "get_all_macros", "get_translated_code")
+__all__ = ("import_with_macros", "get_macro", "get_all_macros", "get_translated_code", "create_macro")
 
 macro_re = re.compile("(.*)\(([^)]+?)\)")
 
@@ -183,6 +183,8 @@ def translate(readline):
                 indented = False
                 create_loop = False
                 _macros.append(Macro(mcr_name, code, func_sig))
+            elif type in (NL, NEWLINE) and not indented:
+                pass
             elif type == INDENT and not indented:
                 indented = True
             elif type == DEDENT and start_indent_level == indent_level:
@@ -315,4 +317,4 @@ def get_translated_code():
     return _translated_code[0]
 
 if __name__ == "__main__":
-    import_with_macros("D:/code/python/projects/macros.py/examples/function_style.py")
+    import_with_macros("D:/code/python/projects/macros.py/examples/max.py")
