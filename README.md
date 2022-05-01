@@ -25,6 +25,7 @@ macro def MAX(a, b):
 def max_1_and_5():
     print(MAX(1, 5))
 
+max_1_and_5()
 
 # output:
 # 5
@@ -39,6 +40,7 @@ This code gets translated to python-readable code:
 def max_1_and_5():
     print((1 if 1 > 5 else 5))
 
+max_1_and_5()
 
 # output:
 # 5
