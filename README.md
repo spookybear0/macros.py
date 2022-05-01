@@ -30,6 +30,20 @@ def max_1_and_5():
 # 5
 ```
 
+This code gets translated to python-readable code:
+
+```py
+# coding: macros
+
+# print the max of 1 and 5
+def max_1_and_5():
+    print((1 if 1 > 5 else 5))
+
+
+# output:
+# 5
+```
+
 More examples can be found in the examples directory
 
 ## How it works
