@@ -1,6 +1,7 @@
 # coding: macros
 
-!MY_MACRO(arg, arg2) print(arg, arg2)
+macro def MY_MACRO(a, b):
+    print(a, b)
 
 MY_MACRO("1", "6")
 

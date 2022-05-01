@@ -1,8 +1,10 @@
 # coding: macros
 
-!MAX(a, b) (a if a > b else b)
-
-!other_macro print("test")
+macro def MAX(a, b):
+    (a if a > b else b)
+    
+macro def noargs:
+    print("no args works!")
 
 # print the max of 1 and 5
 def max_1_and_5():
@@ -16,4 +18,4 @@ def max_3_and_16():
     
 max_3_and_16()
 
-other_macro
+noargs

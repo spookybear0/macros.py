@@ -8,7 +8,7 @@
 
 ## Macros in python
 
-macros.py is an implemention of macros similar to ones found in C using `!` to define macros
+macros.py is an implemention of macros similar to ones found in C using a custom codec to implement a feature into python
 
 Guido van Rossum would hate me
 
@@ -18,13 +18,13 @@ Guido van Rossum would hate me
 ```py
 # coding: macros
 
-!MAX(a, b) (a if a > b else b)
+macro def MAX(a, b):
+    (a if a > b else b)
 
 # print the max of 1 and 5
 def max_1_and_5():
     print(MAX(1, 5))
 
-max_1_and_5()
 
 # output:
 # 5

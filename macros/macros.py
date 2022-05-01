@@ -6,11 +6,15 @@ import encodings
 import types
 import re
 import black
-import sys
+import traceback
+from tokenize import NAME, OP, STRING, ENDMARKER, DEDENT, INDENT
 
 __all__ = ("import_with_macros", "get_macro", "get_all_macros", "get_translated_code")
 
 macro_re = re.compile("(.*)\(([^)]+?)\)")
+
+class PreprocessorError(Exception):
+    pass
 
 class Macro:
     def __init__(self, name, code, func_sig=""):
@@ -19,7 +23,9 @@ class Macro:
         self.tokens = code
         self.func_sig = func_sig
         
-        if func_sig:
+        if func_sig == "()":
+            self.args = []
+        elif func_sig:
             self.args = macro_re.findall(func_sig)[0][1].split(",")
         else:
             self.args = []
@@ -27,9 +33,11 @@ class Macro:
     
     def execute(self, *args):
         """
-        Executes a macro to the best ability
+        Executes a macro to the best ability at runtime
         
         More limited than compile time
+        
+        Not guarenteed to work
         """
         final_tokens = []
         
@@ -39,13 +47,13 @@ class Macro:
         type_p, name_p = None, None
         for type, name in self.tokens:
             if arg_loop:
-                if type == tokenize.OP and name == ")":
+                if type == OP and name == ")":
                     arg_loop = False
-                elif type == tokenize.NAME:
+                elif type == NAME:
                     name = args[args_replaced]
                     args_replaced += 1
                 final_tokens.append((type, name))
-            elif type == tokenize.OP and type_p == tokenize.NAME: # func call
+            elif type == OP and type_p == NAME: # func call
                 arg_loop = True
                 final_tokens.append((type, name))
             else:
@@ -96,71 +104,99 @@ def translate(readline):
     func_args_types = []
     func_arg_name = ""
     
+    indent_level = 0
+    
+    indented = False
+    start_indent_level = 0
+    
     # preprocess macros
-    for type, name,_,_,_ in tokenize.generate_tokens(readline):
+    for type, name, token_start, token_end, line_data in tokenize.generate_tokens(readline):
+        line = token_start[0]
+        char = token_start[1]
+        
+        if type == INDENT:
+            indent_level += 1
+        elif type == DEDENT:
+            indent_level -= 1
+        
         # end marker
-        if type == tokenize.ENDMARKER:
+        if type == ENDMARKER:
             break
 
-        # ignore !, !!, and the name of the macro so we don't get a syntax error
-        if type == tokenize.ERRORTOKEN or (type_p == tokenize.ERRORTOKEN and type == tokenize.NAME):
+        # ignore macro, def, and args so we don't get a syntax error
+        if (type == NAME and name_p == "def" and type_pp == NAME and name_pp == "macro")\
+            or (type_p == NAME and type == NAME and name == "def")\
+            or (type == NAME and name == "macro"):
             pass
+
         # ignore macro name token
         elif _macros.by_name(name):
             pass
-        elif type == tokenize.NAME and name == "macros":
+        elif type == NAME and name == "macros":
             #__import__("sys").modules["macros"]
-            yield tokenize.NAME, "__import__"
-            yield tokenize.OP, "("
-            yield tokenize.STRING, '"sys"'
-            yield tokenize.OP, ")"
-            yield tokenize.OP, "."
-            yield tokenize.NAME, "modules"
-            yield tokenize.OP, "["
-            yield tokenize.STRING, '"macros"'
-            yield tokenize.OP, "]"
-        # start looking for arguments
-        elif _macros.by_name(name_p) and type == tokenize.OP and name == "(":
+            yield NAME, "__import__"
+            yield OP, "("
+            yield STRING, '"sys"'
+            yield OP, ")"
+            yield OP, "."
+            yield NAME, "modules"
+            yield OP, "["
+            yield STRING, '"macros"'
+            yield OP, "]"
+        # start looking for arguments to call
+        # NAME(
+        elif _macros.by_name(name_p) and type == OP and name == "(":
             func_arg_loop = True
             func_arg_name = name_p
             func_args = ""
             func_args_types = []
-        elif type_p == tokenize.NAME and type_pp == tokenize.ERRORTOKEN:
-            # show that we need to loop until macro definition ends
+        # func macro
+        # macro def NAME
+        elif (name_ppp == "macro" and name_pp == "def" and type_p == NAME):
+            start_indent_level = indent_level # should always be zero
+            
             create_loop = True
             code = []
             
             # has args
-            if type == tokenize.OP and name == "(":
+            if name == "(":
                 func_sig = f"{mcr_name}("
                 func_arg_create_loop = True
+            elif name == ":":
+                pass
             else:
                 code.append((type, name))
-            
+                
             mcr_name = name_p
             
-            # if !! make it multiline (macros have to be ended with ;)
-            if type_ppp == tokenize.ERRORTOKEN and name_ppp == "!":
-                mode = ";"
-            else:
-                mode = "\n" # default, just one !
+            mode = None
+            
         # add to func_signature, but if end of the signature stop loop
         elif func_arg_create_loop:
             func_sig += name
-            if type == tokenize.OP and name == ")":
+            if type == OP and name == ")":
                 func_arg_create_loop = False
         elif create_loop:
             # make sure we are still checking for macro chars and if it uses one
             # of our ending sequences (\n, ;), stop the loop and define the macro
-            if name in mode or mode in name:
+            if mode and (name in mode or mode in name):
+                indented = False
                 create_loop = False
                 _macros.append(Macro(mcr_name, code, func_sig))
+            elif type == INDENT and not indented:
+                indented = True
+            elif type == DEDENT and start_indent_level == indent_level:
+                indented = False
+                create_loop = False
+                _macros.append(Macro(mcr_name, code, func_sig))
+            elif name_p == ")" and name == ":":
+                pass
             else:
                 # add token to code to yield when used
                 code.append((type, name))
         elif func_arg_loop:
             # end the loop, call macro with replacing arguments
-            if type == tokenize.OP and name == ")":
+            if name == ")":
                 func_args += ")"
                 
                 func_args = func_args.strip("()").split(",")
@@ -168,9 +204,18 @@ def translate(readline):
                 macro = _macros.by_name(func_arg_name)
                 func_arg_loop = False
                 
+                if len(func_args) != len(macro.args):
+                    exc_args = str(tuple(x for x in macro.args)).replace("'", "")
+                    try:
+                        raise PreprocessorError(f"macro !{func_arg_name}{exc_args} was given too many positional arguments")
+                    except PreprocessorError:
+                        # so we actually get traceback
+                        traceback.print_exc()
+                        exit(1)
+                
                 # create func now with args
                 for type, name in macro.tokens:
-                    if type == tokenize.NAME and name in macro.args:
+                    if type == NAME and name in macro.args:
                         indx = macro.args.index(name)
                         
                         try:
@@ -178,7 +223,12 @@ def translate(readline):
                             type = func_args_types[indx]
                         except IndexError: # not supplied enough args
                             exc_args = str(tuple(x for x in macro.args)).replace("'", "")
-                            raise TypeError(f"macro !{func_arg_name}{exc_args} is missing a required positional argument")
+                            try:
+                                raise PreprocessorError(f"macro !{func_arg_name}{exc_args} is missing a required positional argument")
+                            except PreprocessorError:
+                                # so we actually get traceback
+                                traceback.print_exc()
+                                exit(1)
                     yield type, name
             # add to func args while searching
             else:
@@ -187,7 +237,7 @@ def translate(readline):
         # use macro, since our macro isn't actually defined as a variable
         # we have to prevent it from erroring by checking beforehand
         # and then executing the macro by yielding tokens
-        elif type_p == tokenize.NAME and _macros.by_name(name_p):
+        elif type_p == NAME and _macros.by_name(name_p):
             macro = _macros.by_name(name_p)
 
             # convert code to tokens and execute it
@@ -265,4 +315,4 @@ def get_translated_code():
     return _translated_code[0]
 
 if __name__ == "__main__":
-    import_with_macros("D:/code/python/projects/macros.py/examples/max.py")
+    import_with_macros("D:/code/python/projects/macros.py/examples/function_style.py")
