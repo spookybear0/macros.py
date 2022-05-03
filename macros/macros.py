@@ -182,6 +182,22 @@ def translate(readline):
             if mode and (name in mode or mode in name):
                 indented = False
                 create_loop = False
+                
+                new = []
+                copy = code.copy()
+                copy.reverse()
+                keep_adding = True
+
+                for x in copy:
+                    if "\n" in x and keep_adding:
+                        pass
+                    else:
+                        new.append(x)
+                        keep_adding = False
+    
+                new.reverse()
+                code = new
+            
                 _macros.append(Macro(mcr_name, code, func_sig))
             elif type in (NL, NEWLINE) and not indented:
                 pass
@@ -190,6 +206,22 @@ def translate(readline):
             elif type == DEDENT and start_indent_level == indent_level:
                 indented = False
                 create_loop = False
+                
+                new = []
+                copy = code.copy()
+                copy.reverse()
+                keep_adding = True
+
+                for x in copy:
+                    if "\n" in x and keep_adding:
+                        pass
+                    else:
+                        new.append(x)
+                        keep_adding = False
+    
+                new.reverse()
+                code = new
+                
                 _macros.append(Macro(mcr_name, code, func_sig))
             elif name_p == ")" and name == ":":
                 pass
