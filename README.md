@@ -12,6 +12,7 @@ macros.py is an implemention of macros similar to ones found in C using a custom
 
 Guido van Rossum would hate me
 
+
 ## Examples
 
 ### Max function-macro
@@ -50,7 +51,9 @@ More examples can be found in the examples directory
 
 ## How it works
 
-You might be wondering, how the hell did you make macros in python. It's possible due to a quirk in python that allows custom encodings to be created and preprocess the code before it is run. When a macro is defined it doesn't actually define it as a python variable, it saves the bytecode and name of a macro in a list of macros that is checked against when token of type `tokenize.NAME` is seen. When a macro is used, it yields the tokens of the macro in place (and if the macro has args, replaces those).
+~Magic~
+
+Macros are possible due to a quirk in python that allows custom encodings to be created and preprocess the code before it is run. When a macro is defined it doesn't actually define it as a python variable, it saves the bytecode and name of a macro in a list of macros that is checked against when token of type `tokenize.NAME` is seen. When a macro is used, it yields the tokens of the macro in place (and if the macro has args, replaces those).
 
 ## Installing
 
