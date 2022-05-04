@@ -1,7 +1,7 @@
 # coding: macros
 
 macro def until:
-    while not i
+    while not
 
 i = 0
 

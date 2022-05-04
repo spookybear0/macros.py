@@ -277,8 +277,10 @@ def translate(readline):
             macro = _macros.by_name(name_p)
 
             # convert code to tokens and execute it
-            for type, name in macro.tokens:
-                yield type, name
+            for type_, name_ in macro.tokens:
+                yield type_, name_
+                
+            yield type, name
         else:
             # no special stuff found, just return normal values
             yield type, name
