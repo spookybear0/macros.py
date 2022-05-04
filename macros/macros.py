@@ -215,7 +215,7 @@ def translate(readline):
                 keep_adding = True
 
                 for x in copy:
-                    if "\n" in x and keep_adding:
+                    if ("\n" in x[1] or "\r" in x[1]) and keep_adding:
                         pass
                     else:
                         new.append(x)
@@ -305,7 +305,10 @@ def macro_decode(source, errors="strict"):
             print(final)
         
         if final != "":
-            _translated_code[0] = black.format_str(final, mode=black.FileMode(line_length=99999))
+            try:
+                _translated_code[0] = black.format_str(final, mode=black.FileMode(line_length=99999))
+            except Exception:
+                _translated_code[0] = final
         
         return final, length
     except Exception:
@@ -365,4 +368,4 @@ def get_translated_code():
     return _translated_code[0]
 
 if __name__ == "__main__":
-    import_with_macros("D:/code/python/projects/macros.py/examples/max.py")
+    import_with_macros("D:/code/python/projects/macros.py/examples/until.py")
