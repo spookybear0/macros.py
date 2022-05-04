@@ -13,6 +13,8 @@ __all__ = ("import_with_macros", "get_macro", "get_all_macros", "get_translated_
 
 macro_re = re.compile("(.*)\(([^)]+?)\)")
 
+debug = False
+
 class PreprocessorError(Exception):
     pass
 
@@ -263,14 +265,23 @@ class MacroStreamReader(utf_8.StreamReader):
 
 # it just works okay
 def macro_decode(source, errors="strict"):
-    code, length = utf_8.decode(source, errors)
-    
-    final = str(tokenize.untokenize(translate(StringIO(code).readline)))
-    
-    if final != "":
-        _translated_code[0] = black.format_str(final, mode=black.FileMode(line_length=99999))
-    
-    return final, length
+    try:
+        code, length = utf_8.decode(source, errors)
+        
+        final = str(tokenize.untokenize(translate(StringIO(code).readline)))
+        if debug:
+            print(final)
+        
+        if final != "":
+            _translated_code[0] = black.format_str(final, mode=black.FileMode(line_length=99999))
+        
+        return final, length
+    except Exception:
+        if debug:
+            traceback.print_exc()
+            print()
+            for m in get_all_macros():
+                print(m, "\n", m.code, m.tokens)
 
 class MacroIncrementalDecoder(codecs.BufferedIncrementalDecoder):
     def _buffer_decode(self, input, errors, final=False):
@@ -281,7 +292,12 @@ class MacroIncrementalDecoder(codecs.BufferedIncrementalDecoder):
             return "", 0
 
 def search_function(s):
-    if s != "macros": return None
+    global debug
+    if not "macros" in s:
+        return None
+    elif "debug" in s:
+        debug = True
+    
     utf8 = encodings.search_function("utf8") # assume utf8 encoding
     
     return codecs.CodecInfo(
